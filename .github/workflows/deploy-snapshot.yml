@@ -1,35 +1,39 @@
-name: Deploy snapshot
-on:
-  push:
-    branches:
-      - main
 jobs:
   publish:
-    runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, 'Prepare for release') }}
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v2
+    - continue-on-error: true
+      uses: actions/checkout@v2
+    - continue-on-error: true
+      name: Cache Gradle Files
+      uses: actions/cache@v2
+      with:
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties')
+          }}
+        path: '~/.gradle/caches/
 
-      - name: Cache Gradle Files
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches/
-            ~/.gradle/wrapper/
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          ~/.gradle/wrapper/
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
+          '
+        restore-keys: '${{ runner.os }}-gradle-
 
-      - name: Build
-        run: ./gradlew build
-
-      - name: Publish package
-        run: ./gradlew publishAllPublicationsToSonatypeSnapshotRepository
-        env:
-          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          '
+    - continue-on-error: true
+      name: Set up Java
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - continue-on-error: true
+      name: Build
+      run: ./gradlew build
+    - continue-on-error: true
+      env:
+        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+      name: Publish package
+      run: ./gradlew publishAllPublicationsToSonatypeSnapshotRepository
+name: Deploy snapshot
+on:
+  repository_dispatch:
+    types: trigger-ga___deploy-snapshot.yml
